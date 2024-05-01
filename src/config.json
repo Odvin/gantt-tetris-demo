@@ -1,0 +1,9 @@
+{
+  "excludeWeekends": true,
+  "excludedWorkDates": ["2024-01-01", "2024-01-05"],
+  "permissibleCapacityDiscrepancy": 1,
+  "crewRecommended": true,
+  "considerScopes": true,
+  "considerCertifications": true,
+  "considerSkills": true
+}
