@@ -111,6 +111,7 @@
   "crewRecommended": true, // if false then the company will be recommended
   "considerScopes": true, // if false then does not care about scopes
   "considerCertifications": true, // if false then does not care about certifications
-  "considerSkills": true // if false then does not care about skills
+  "considerSkills": true, // if false then does not care about skills
+  "considerAllocations": true // if false then does not care about allocation
 }
 ```
