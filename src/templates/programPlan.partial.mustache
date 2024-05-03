@@ -1,18 +1,11 @@
 gantt
-  title Project activity on 2023-01-01
+  title Program activities
   dateFormat YYYY-MM-DD
-  section Inst
-    {{job}} (st-c01)         :ins1, 2023-01-01, 2023-01-14
-    Cyber Crone (0%)         :milestone, 2023-01-01, 1m
-    Job X-10B (st-x05)       :after ins1, 2023-01-30
-    Palantir (0%)            :milestone, 2023-01-14, 1m
-  section Tuning
-    Job Y-10C (st-x01)       :tuning1, 2023-01-20, 10d
-    Cyber Crone (0%)         :milestone, 2023-01-20, 1m
-    Job Y-00D (st-x05)       :after tuning1, 2023-02-12
-    Palantir (0%)            :milestone, 2023-01-30, 1m
-  section Testing
-    Job Z-10C (st-x01)       :2023-02-01, 14d
-    Cyber Crone (0%)         :milestone, 2023-02-01, 1m
-    Job Z-00D (st-x05)       :10d
-    Palantir (0%)            :milestone, 2023-02-01, 1m
+  {{#planActivities}}
+  section {{site}}
+    {{#activities}}
+    {{id}} P{{p}} C{{c}}       :{{id}}, {{start}}, {{end}}
+    {{/activities}}
+  {{/planActivities}}
+
+  

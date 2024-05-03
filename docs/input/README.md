@@ -75,7 +75,8 @@
       "countryCode": "US", // string char(2) ISO 3166 A-2
       "state": "Florida", // string varchar(30)
       "city": "Tallahassee", // string varchar(50)
-      "contactPhone": "+14155552671", // string varchar(20) E.164
+      "certifications": ["c-001", "c-002"], // crew members certifications (list of the ids)
+      "skills": ["s-001", "s-002"] // crew members skills (list of the ids)
       "latitude": 30.437664916, // float
       "longitude": -84.288165514 // float
     }
@@ -93,9 +94,7 @@
       "companyId": "faf48a9d-5eee-4216-92e9-0256880f4a1a", // string uuid not null
       "crewId": "d1f56c50-945e-45ef-9f9a-47f771558cf5", // string uuid not null
       "workDate": "2024-01-01", // string ISO 8601 not null
-      "capacity": 1, // float [0,1;1] 1 - for the complete work day
-      "certifications": ["c-001", "c-002"], // crew members certifications (list of the ids)
-      "skills": ["s-001", "s-002"] // crew members skills (list of the ids)
+      "capacity": 1 // float [0,1;1] 1 - for the complete work day
     }
   ]
 }

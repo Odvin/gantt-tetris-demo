@@ -3,13 +3,17 @@ import * as path from 'path';
 
 import Mustache from 'mustache';
 
+import plan from './mock/mockProgramPlan.json' assert {type: 'json'};
+
 const template = `
   <!DOCTYPE html>
   <html lang="en">
   {{>head}}
     <body>
-      {{>foo}}
-      {{>bar}}
+      {{>program}}
+      {{>sites}}
+      {{>projects}}
+      {{>activities}}
       <pre class="mermaid">
         {{>programPlan}}
       </pre>
@@ -17,9 +21,46 @@ const template = `
     </body>
   </html>`;
 
-const data = {title: 'Hello, world!', name: 'Jon', age: 23, job: 'Job X-00A'};
+const planActivities = [];
+const siteSet = new Set();
+const siteMap = new Map();
 
-function _loadSharedPartials() {
+for (let a of plan.activities) {
+  if (siteSet.has(a.siteId)) {
+    siteMap.get(a.siteId).push({
+      start: a.activityStartDate,
+      end: a.activityEndDate,
+      id: a.activityId.split('-')[0],
+      c: a.capacity,
+      p: a.priority,
+    });
+  } else {
+    siteMap.set(a.siteId, [
+      {
+        start: a.activityStartDate,
+        end: a.activityEndDate,
+        id: a.activityId.split('-')[0],
+        c: a.capacity,
+        p: a.priority,
+      },
+    ]);
+    siteSet.add(a.siteId);
+  }
+}
+
+for (let siteKey of siteMap.keys()) {
+  planActivities.push({
+    site: plan.sites.find((s) => s.siteId === siteKey).siteTitle,
+    activities: siteMap.get(siteKey),
+  });
+}
+
+const data = {
+  plan,
+  planActivities,
+};
+
+function loadSharedPartials() {
   const partials = {};
   const files = fs.readdirSync('./src/templates');
 
@@ -36,7 +77,7 @@ function _loadSharedPartials() {
 }
 
 try {
-  const output = Mustache.render(template, data, _loadSharedPartials());
+  const output = Mustache.render(template, data, loadSharedPartials());
 
   fs.writeFileSync('./src/index.html', output);
 } catch (error) {

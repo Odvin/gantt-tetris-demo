@@ -1,0 +1,26 @@
+<div class="container">
+<h5>Projects</h5>
+<table class="table">
+  <thead>
+    <tr>
+      <th scope="col">ID</th>
+      <th scope="col">Site ID</th>
+      <th scope="col">Title</th>
+      <th scope="col">Start</th>
+      <th scope="col">End</th>
+    </tr>
+  </thead>
+  <tbody>
+  {{#plan.projects}}
+    <tr>
+      <th>{{projectId}}</th>
+      <th>{{siteId}}</th>
+      <td>{{projectTitle}}</td>
+      <td>{{projectStarDate}}</td>
+      <td>{{projectEndDate}}</td>
+    </tr>
+    {{/plan.projects}}
+  </tbody>
+</table>
+</div>
+

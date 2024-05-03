@@ -278,6 +278,34 @@ class Generator {
           {probability: config.crewLocationProbability}
         );
 
+        let crewSkills = faker.helpers.maybe(
+          () => {
+            const ss = [];
+            const s = faker.number.int(config.maxSkillsPerCrew);
+            for (let i = 0; i < s; i++) {
+              ss.push(faker.helpers.arrayElement(skills));
+            }
+            return ss;
+          },
+          {
+            probability: config.crewSkillPresenceProbability,
+          }
+        );
+
+        let crewCertifications = faker.helpers.maybe(
+          () => {
+            const cs = [];
+            const c = faker.number.int(config.maxCertificationsPerCrew);
+            for (let i = 0; i < c; i++) {
+              cs.push(faker.helpers.arrayElement(certifications));
+            }
+            return cs;
+          },
+          {
+            probability: config.crewCertificationPresenceProbability,
+          }
+        );
+
         crews.push({
           companyId,
           crewId: faker.string.uuid(),
@@ -285,7 +313,8 @@ class Generator {
           countryCode: faker.location.countryCode('alpha-2'),
           state: faker.location.state(),
           city: faker.location.city(),
-          contactPhone: faker.phone.number(),
+          certifications: crewCertifications,
+          skills: crewSkills,
           ...location,
         });
       }
@@ -344,34 +373,6 @@ class Generator {
     for (let crew of crews) {
       const dates = getDates(config.programStartDate, config.programEndDate);
       for (let date of dates) {
-        let crewSkills = faker.helpers.maybe(
-          () => {
-            const ss = [];
-            const s = faker.number.int(config.maxSkillsPerCrew);
-            for (let i = 0; i < s; i++) {
-              ss.push(faker.helpers.arrayElement(skills));
-            }
-            return ss;
-          },
-          {
-            probability: config.crewSkillPresenceProbability,
-          }
-        );
-
-        let crewCertifications = faker.helpers.maybe(
-          () => {
-            const cs = [];
-            const c = faker.number.int(config.maxCertificationsPerCrew);
-            for (let i = 0; i < c; i++) {
-              cs.push(faker.helpers.arrayElement(certifications));
-            }
-            return cs;
-          },
-          {
-            probability: config.crewCertificationPresenceProbability,
-          }
-        );
-
         capacities.push({
           companyId: crew.companyId,
           crewId: crew.crewId,
@@ -379,16 +380,57 @@ class Generator {
           capacity: faker.helpers.arrayElement([
             0.5, 1, 1, 1, 1, 1, 1, 1, 1, 1,
           ]),
-          certifications: crewCertifications,
-          skills: crewSkills,
         });
       }
     }
     return capacities;
   }
+
+  generateProgramPlan() {
+    const program = this.getProgram();
+    const sites = this.getSites();
+    const projects = this.getProjects(sites.map((s) => s.siteId));
+    const activities = this.getActivities(projects);
+
+    fs.writeFileSync(
+      './src/mock/mockProgramPlan.json',
+      JSON.stringify({
+        ...program,
+        sites,
+        projects,
+        activities: activities.sort((a, b) => a.siteId.localeCompare(b.siteId)),
+      })
+    );
+
+    return program.programId;
+  }
+
+  generateCapacityInfo(programId) {
+    const capacity = this.getCapacity();
+    const companies = this.getCompanies();
+    const companiesIds = companies.map((c) => c.companyId);
+    const crews = this.getCrews(companiesIds);
+    const allocations = this.getAllocations(programId, companiesIds);
+    const capacities = this.getCapacities(crews);
+
+    fs.writeFileSync(
+      './src/mock/mockCapacityInfo.json',
+      JSON.stringify({
+        ...capacity,
+        companies,
+        crews,
+        allocations,
+        capacities,
+      })
+    );
+  }
 }
 
 const generator = new Generator();
+
+const programId = generator.generateProgramPlan();
+
+generator.generateCapacityInfo(programId);
 
 // console.log(JSON.stringify(generator.getProgram(), null, 4));
 
