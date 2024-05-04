@@ -1,0 +1,51 @@
+<div class="container">
+<h5>Program Capacity</h5>
+<table class="table table-striped">
+  <thead>
+    <tr>
+      <th scope="col">Site ID, Title</th>
+      <th scope="col">Site Activities</th>
+      <th scope="col">Site Capacity</th>
+    </tr>
+  </thead>
+  <tbody>
+  {{#programCap}}
+    <tr>
+      <td>{{siteId}} <br/> {{siteTitle}}</td>
+      <td>{{siteActivities}}</td>
+      <td>{{siteCapacity}}</td>
+    <tr>  
+      <td colspan="3">
+        <table class="table mb-0">
+          <thead>
+            <tr>
+              <th scope="col">Project ID, Title</th>
+              <th scope="col">Program Activities</th>
+              <th scope="col">Program Capacity</th>
+            </tr>
+          </thead>
+          <tbody>
+          {{#projectCap}}
+           <tr>
+           <td>{{projectId}} <br/> {{projectTitle}}</td>
+           <td>{{projectActivities}}</td>
+           <td>{{projectCapacity}}</td>
+           <tr/>
+          {{/projectCap}}
+          </tbody>
+        </table>
+      </td>
+    </tr>
+    </tr>
+    {{/programCap}}
+  </tbody>
+  <tfoot>
+    <td><b>Total</b></td>
+    <td>{{programTotalActivities}}</td>
+    <td><b>{{programTotalCapacities}}</b></td>
+  </tfoot>
+</table>
+</div>
+
+
+

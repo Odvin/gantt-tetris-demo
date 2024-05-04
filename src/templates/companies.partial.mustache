@@ -1,0 +1,44 @@
+<div class="container">
+<h5>Companies</h5>
+<table class="table">
+  <thead>
+    <tr>
+      <th scope="col">ID, Title</th>
+      <th scope="col">Address</th>
+      <th scope="col">Location</th>
+      <th scope="col">Rating</th>
+      <th scope="col">Allocated</th>
+      <th scope="col">Scopes</th>
+      <th scope="col">Crews</th>
+      <th scope="col">Capacity</th>
+    </tr>
+  </thead>
+  <tbody>
+  {{#companyCap}}
+    <tr>
+      <td>{{companyId}} <br/> {{companyTitle}}</td>
+      <td><b>{{countryCode}}</b> {{state}} {{city}} <br/> {{address}}</td>
+      <td>lat: {{latitude}}</br>log: {{longitude}}</td>
+      <td>{{rating}}</td>
+      <td>{{activitiesPercentage}}%</td>
+      <td>{{scopes}}</td>
+      <td>{{crews}}</td>
+      <td>{{capacity}}</td>
+    </tr>
+    {{/companyCap}}
+  </tbody>
+  <tfoot>
+    <td><b>Total</b></td>
+    <td></td>
+    <td></td>
+    <td></td>
+    <td>100%</td>
+    <td></td>
+    <td></td>
+    <td><b>{{totalCompaniesCapacity}}</b></td>
+  </tfoot>
+</table>
+</div>
+
+
+

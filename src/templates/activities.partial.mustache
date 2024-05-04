@@ -1,9 +1,10 @@
 <div class="container">
 <h5>Activities</h5>
-<table class="table">
+<table class="table" style="max-height: 1000px; overflow: auto; display:inline-block;">
   <thead>
     <tr>
-      <th scope="col">Activity, Site, Project (IDs)</th>
+    <th scope="col">Activity</th>
+      <th scope="col">Site, Project (IDs)</th>
       <th scope="col">Scope<br/>Certifications, Skills</th>
       <th scope="col">Priority</th>
       <th scope="col">Capacity</th>
@@ -13,7 +14,8 @@
   <tbody>
   {{#plan.activities}}
     <tr>
-      <td>{{activityId}} <br/> {{siteId}}<br/>{{projectId}}</td>
+      <td>{{activityId}}</td>
+      <td>{{siteId}}<br/>{{projectId}}</td>
       <td><b>{{scope}}</b> <br/> <b>C:</b> {{#certifications}} {{.}}<br /> {{/certifications}} <br/> <b>S:</b> {{#skills}} {{.}}<br /> {{/skills}}</td>
       <td>{{priority}}</td>
       <td>{{capacity}}</td>

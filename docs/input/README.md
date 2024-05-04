@@ -76,7 +76,7 @@
       "state": "Florida", // string varchar(30)
       "city": "Tallahassee", // string varchar(50)
       "certifications": ["c-001", "c-002"], // crew members certifications (list of the ids)
-      "skills": ["s-001", "s-002"] // crew members skills (list of the ids)
+      "skills": ["s-001", "s-002"], // crew members skills (list of the ids)
       "latitude": 30.437664916, // float
       "longitude": -84.288165514 // float
     }

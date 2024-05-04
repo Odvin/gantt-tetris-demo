@@ -23,6 +23,7 @@ const config = {
   companyLocationProbability: 0.5,
   maxCrewPerCompany: 5,
   crewLocationProbability: 0.25,
+  crewDayOfProbability: 0.25,
   allocationScopeProbability: 0.25,
   maxScopesPerAllocation: 2,
   crewSkillPresenceProbability: 0.5,
@@ -373,14 +374,17 @@ class Generator {
     for (let crew of crews) {
       const dates = getDates(config.programStartDate, config.programEndDate);
       for (let date of dates) {
-        capacities.push({
-          companyId: crew.companyId,
-          crewId: crew.crewId,
-          workDate: date,
-          capacity: faker.helpers.arrayElement([
-            0.5, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-          ]),
-        });
+        let dayOfChance = faker.number.int({min: 0, max: 100});
+        if (dayOfChance / 100 > config.crewDayOfProbability) {
+          capacities.push({
+            companyId: crew.companyId,
+            crewId: crew.crewId,
+            workDate: date,
+            capacity: faker.helpers.arrayElement([
+              0.5, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+            ]),
+          });
+        }
       }
     }
     return capacities;

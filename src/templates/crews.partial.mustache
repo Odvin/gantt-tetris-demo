@@ -1,0 +1,49 @@
+<div class="container">
+<h5>Crews</h5>
+<table class="table table-striped">
+  <thead>
+    <tr>
+      <th scope="col">Company ID, Title</th>
+      <th scope="col">Location</th>
+      <th scope="col">Rating</th>
+      <th scope="col">Crews</th>
+    </tr>
+  </thead>
+  <tbody>
+  {{#companyCrews}}
+    <tr>
+      <td>{{companyId}} <br/> {{companyTitle}}</td>
+      <td>lat: {{latitude}}</br>log: {{longitude}}</td>
+      <td>{{rating}}</td>
+      <td>{{crews}}</td>
+    <tr>
+      <td colspan="4">
+      <table class="table mb-0">
+        <thead>
+          <tr>
+            <th scope="col">Crew ID, Title</th>
+            <th scope="col">Address</th>
+            <th scope="col">Location</th>
+            <th scope="col">Certifications, Skills</th>
+            </tr>
+          </thead>
+          <tbody>
+          {{#compCrews}}
+            <tr>
+            <td>{{crewId}}<br/>{{crewTitle}}</td>
+            <td><b>{{countryCode}}</b> {{state}}<br/>{{city}}</td>
+            <td>lat: {{latitude}}</br>log: {{longitude}}</td>
+            <td><b>C:</b> {{certifications}}<br><b>S:</b> {{skills}}</td>
+            <tr/>
+          {{/compCrews}}
+          </tbody>
+        </table>
+      </td>
+    </tr>
+    {{/companyCrews}}
+  </tbody>
+</table>
+</div>
+
+
+
