@@ -53,7 +53,7 @@
 ```json
 {
   "capacityInfoId": "de0cc934-de40-490f-be5c-7cd5c2f0bcb1", // string uuid not null
-  "createdAt": "2011-10-05T14:48:00.000Z", // string ISO 8601
+  "createdAt": "2011-10-05T14:48:00.000Z", // string ISO 8601 not null
   "companies": [
     {
       "companyId": "faf48a9d-5eee-4216-92e9-0256880f4a1a", // string uuid not null
@@ -94,7 +94,7 @@
       "companyId": "faf48a9d-5eee-4216-92e9-0256880f4a1a", // string uuid not null
       "crewId": "d1f56c50-945e-45ef-9f9a-47f771558cf5", // string uuid not null
       "workDate": "2024-01-01", // string ISO 8601 not null
-      "capacity": 1 // float [0,1;1] 1 - for the complete work day
+      "capacity": 1 // float [0,1;1] not null. 1 - for the complete work day
     }
   ]
 }
