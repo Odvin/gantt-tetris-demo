@@ -108,9 +108,9 @@
   "excludedWorkDates": ["2024-01-01", "2024-01-05"],
   "permissibleCapacityDiscrepancy": 1,
   "crewRecommended": true, // if false then the company will be recommended
+  "considerCrewLocation": true, // if false then does not care about crew location
   "considerScopes": true, // if false then does not care about scopes
   "considerCertifications": true, // if false then does not care about certifications
-  "considerSkills": true, // if false then does not care about skills
-  "considerAllocations": true // if false then does not care about allocation
+  "considerSkills": true // if false then does not care about skills
 }
 ```

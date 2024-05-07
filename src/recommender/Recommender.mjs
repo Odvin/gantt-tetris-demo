@@ -6,10 +6,10 @@ export default class Recommender {
     excludedWorkDates: [],
     permissibleCapacityDiscrepancy: 1,
     crewRecommended: true,
+    considerCrewLocation: true,
     considerScopes: true,
     considerCertifications: true,
     considerSkills: true,
-    considerAllocations: true,
   };
 
   // -> statistics
@@ -66,6 +66,38 @@ export default class Recommender {
     }
 
     return dates;
+  }
+
+  #getDistance(lat1, lon1, lat2, lon2, unit = 'M') {
+    if (lat1 == lat2 && lon1 == lon2) {
+      return 0;
+    } else {
+      const radLat1 = (Math.PI * lat1) / 180;
+      const radLat2 = (Math.PI * lat2) / 180;
+      const theta = lon1 - lon2;
+      const radTheta = (Math.PI * theta) / 180;
+      let dist =
+        Math.sin(radLat1) * Math.sin(radLat2) +
+        Math.cos(radLat1) * Math.cos(radLat2) * Math.cos(radTheta);
+
+      if (dist > 1) {
+        dist = 1;
+      }
+
+      dist = Math.acos(dist);
+      dist = (dist * 180) / Math.PI;
+      dist = dist * 60 * 1.1515;
+
+      if (unit == 'K') {
+        dist = dist * 1.609344;
+      }
+
+      if (unit == 'N') {
+        dist = dist * 0.8684;
+      }
+
+      return dist;
+    }
   }
 
   #findCompanyForJob(job) {
@@ -133,7 +165,204 @@ export default class Recommender {
       }
     }
 
-    return {companyIds, totalCapacity};
+    return {
+      companyIds,
+      jobInfo: {
+        activityCapacity: activity.capacity,
+        activityDays,
+        totalCapacity,
+        activityId: job.id,
+      },
+    };
+  }
+
+  #allocateCompanyForJob(companyIds) {
+    const remainders = companyIds.map(
+      (c) =>
+        (this.#requiredCapacity * this.#companies.get(c).activitiesPercentage) /
+          100 -
+        this.#companies.get(c).allocated
+    );
+
+    const maxRemainder = Math.max(...remainders);
+
+    return companyIds[remainders.indexOf(maxRemainder)];
+  }
+
+  #allocateCrewsForJob(allocatedCompanyId, jobInfo) {
+    const activity = this.#activities.get(jobInfo.activityId);
+    const company = this.#companies.get(allocatedCompanyId);
+
+    const crewsCapacity = [];
+
+    for (let [id, crew] of company.crews.entries()) {
+      // check requeued certifications
+      if (
+        this.#config.considerCertifications &&
+        activity.certifications.length
+      ) {
+        if (
+          !activity.certifications.every((c) => crew.certifications.includes(c))
+        ) {
+          continue;
+        }
+      }
+      // check requeued skills
+      if (this.#config.considerSkills && activity.skills.length) {
+        if (!activity.skills.every((s) => crew.skills.includes(s))) {
+          continue;
+        }
+      }
+      // check requeued capacity
+      let crewSubCapacity = 0;
+      for (let workDate of jobInfo.activityDays) {
+        crewSubCapacity += crew.capacity.has(workDate)
+          ? crew.capacity.get(workDate)
+          : 0;
+      }
+
+      // check distance from site to the crew
+      let crewToSiteDistance = Infinity;
+      if (this.#config.considerCrewLocation) {
+        if (this.#sites.get(activity.siteId).lat) {
+          const siteLat = this.#sites.get(activity.siteId).lat;
+          const siteLong = this.#sites.get(activity.siteId).long;
+
+          if (crew.lat) {
+            crewToSiteDistance = this.#getDistance(
+              siteLat,
+              siteLong,
+              crew.lat,
+              crew.long
+            );
+          }
+        }
+      }
+
+      crewsCapacity.push({
+        crewId: id,
+        capacity: crewSubCapacity,
+        distance: crewToSiteDistance,
+      });
+    }
+
+    crewsCapacity.sort((c1, c2) => c1.distance - c2.distance);
+
+    if (crewsCapacity.every((c) => c.distance === Infinity)) {
+      crewsCapacity.sort((c1, c2) => c2.capacity - c1.capacity);
+    }
+
+    const selectedCrewIds = [];
+    let collectedCrewCapacity = 0;
+    for (let selectedCrew of crewsCapacity) {
+      selectedCrewIds.push(selectedCrew.crewId);
+      collectedCrewCapacity += selectedCrew.capacity;
+
+      if (
+        collectedCrewCapacity + this.#config.permissibleCapacityDiscrepancy >
+        jobInfo.totalCapacity
+      ) {
+        break;
+      }
+    }
+    return selectedCrewIds;
+  }
+
+  #getCrewsRecommendations(allocatedCompanyId, allocatedCrewIds, jobInfo) {
+    const crews = this.#companies.get(allocatedCompanyId).crews;
+    const capacities = this.#companies.get(allocatedCompanyId).capacities;
+    let recommendations = [];
+
+    let reqCapacity = jobInfo.totalCapacity;
+    for (let workDate of jobInfo.activityDays) {
+      recommendations = allocatedCrewIds.map((c) => ({
+        activityId: jobInfo.activityId,
+        companyId: allocatedCompanyId,
+        crewId: c,
+        startDate: workDate,
+        endDate: workDate,
+      }));
+
+      for (let crewId of allocatedCrewIds) {
+        if (reqCapacity > 0) {
+          let crewCapacity = crews.get(crewId).capacity;
+          reqCapacity -= crewCapacity.get(workDate);
+
+          capacities.set(
+            workDate,
+            capacities.get(workDate) - crewCapacity.get(workDate)
+          );
+
+          crewCapacity.set(workDate, 0);
+
+          crews.set(crewId, {
+            ...crews.get(crewId),
+            capacity: crewCapacity,
+          });
+
+          recommendations = recommendations.map((r) =>
+            r.crewId === crewId
+              ? {
+                  ...r,
+                  endDate: workDate,
+                }
+              : r
+          );
+        } else {
+          break;
+        }
+      }
+
+      if (reqCapacity <= 0) break;
+    }
+
+    this.#companies.set(allocatedCompanyId, {
+      ...this.#companies.get(allocatedCompanyId),
+      crews: crews,
+      capacities: capacities,
+      allocated: jobInfo.totalCapacity,
+    });
+
+    return recommendations;
+  }
+
+  #getCompaniesRecommendations(allocatedCompanyId, jobInfo) {
+    const capacities = this.#companies.get(allocatedCompanyId).capacities;
+    let recommendation = {
+      activityId: jobInfo.activityId,
+      companyId: allocatedCompanyId,
+      crewId: allocatedCompanyId,
+      startDate: jobInfo.activityDays[0],
+    };
+
+    let reqCapacity = jobInfo.totalCapacity;
+    for (let workDate of jobInfo.activityDays) {
+      recommendation = {
+        ...recommendation,
+        endDate: workDate,
+      };
+
+      const companyDailyCapacity = capacities.get(workDate);
+
+      const takeCapacity =
+        companyDailyCapacity >= jobInfo.activityCapacity
+          ? jobInfo.activityCapacity
+          : companyDailyCapacity;
+
+      reqCapacity -= takeCapacity;
+
+      capacities.set(workDate, companyDailyCapacity - takeCapacity);
+
+      if (reqCapacity <= 0) break;
+    }
+
+    this.#companies.set(allocatedCompanyId, {
+      ...this.#companies.get(allocatedCompanyId),
+      capacities: capacities,
+      allocated: jobInfo.totalCapacity,
+    });
+
+    return recommendation;
   }
 
   constructor(config = {}) {
@@ -341,7 +570,7 @@ export default class Recommender {
 
         // Initiate crews
         let companyCrews = new Map();
-        let crewCapacity = new Map();
+
         let crewSkills = [];
         let crewCertifications = [];
 
@@ -351,6 +580,7 @@ export default class Recommender {
               throw Error('Some crew is missed crewId');
             }
 
+            let crewCapacity = new Map();
             hasLocation = Boolean(crew.latitude && crew.longitude);
 
             for (let cap of capacityInfo.capacities) {
@@ -417,10 +647,49 @@ export default class Recommender {
   }
 
   get recommendation() {
+    const result = [];
     for (let job of this.#orderedActivities) {
-      const {companyIds, totalCapacity} = this.#findCompanyForJob(job);
-      console.log({companyIds, totalCapacity});
+      const {companyIds, jobInfo} = this.#findCompanyForJob(job);
+
+      const allocatedCompanyId = this.#allocateCompanyForJob(companyIds);
+      let allocatedCrewIds = allocatedCompanyId ? [allocatedCompanyId] : [];
+
+      if (this.#config.crewRecommended && allocatedCompanyId) {
+        allocatedCrewIds = this.#allocateCrewsForJob(
+          allocatedCompanyId,
+          jobInfo
+        );
+
+        let recommendations = this.#getCrewsRecommendations(
+          allocatedCompanyId,
+          allocatedCrewIds,
+          jobInfo
+        );
+
+        recommendations = recommendations.map((r) => ({
+          ...r,
+          siteId: this.#activities.get(job.id).siteId,
+          projectId: this.#activities.get(job.id).projectId,
+        }));
+
+        result.push(...recommendations);
+      }
+
+      if (!this.#config.crewRecommended && allocatedCompanyId) {
+        const recommendation = this.#getCompaniesRecommendations(
+          allocatedCompanyId,
+          jobInfo
+        );
+
+        result.push({
+          ...recommendation,
+          siteId: this.#activities.get(job.id).siteId,
+          projectId: this.#activities.get(job.id).projectId,
+        });
+      }
     }
+
+    return result;
   }
 
   // logCompanyCrews(companyId) {
