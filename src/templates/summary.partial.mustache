@@ -1,0 +1,36 @@
+<div class="mt-5 mb-3">
+<div class="container" >
+  <div class="row">
+    <div class="col">
+      <h5>Provided capacity: {{stats.providedCapacity}}</h5>
+    </div>
+    <div class="col">
+      <h5>Allocated capacity: {{stats.allocatedCapacity}}</h5>
+    </div>
+  </div>
+  <hr />
+</div>
+</div>
+<div class="container">
+<h5>Company Allocation</h5>
+<table class="table">
+  <thead>
+    <tr>
+      <th scope="col">Company ID</th>
+      <th scope="col">Allocated</th>
+      <th scope="col">Requested</th>
+      <th scope="col">Provided</th>
+    </tr>
+  </thead>
+  <tbody>
+  {{#stats.companyAllocations}}
+    <tr>
+      <th>{{companyId}}</th>
+      <td>{{allocated}}</td>
+      <td>{{requestedPercentage}}%</td>
+      <td>{{providedPercentage}}%</td>
+    </tr>
+    {{/stats.companyAllocations}}
+  </tbody>
+</table>
+</div>

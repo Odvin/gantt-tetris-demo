@@ -271,26 +271,26 @@ export default class Recommender {
   #getCrewsRecommendations(allocatedCompanyId, allocatedCrewIds, jobInfo) {
     const crews = this.#companies.get(allocatedCompanyId).crews;
     const capacities = this.#companies.get(allocatedCompanyId).capacities;
-    let recommendations = [];
 
     let reqCapacity = jobInfo.totalCapacity;
-    for (let workDate of jobInfo.activityDays) {
-      recommendations = allocatedCrewIds.map((c) => ({
-        activityId: jobInfo.activityId,
-        companyId: allocatedCompanyId,
-        crewId: c,
-        startDate: workDate,
-        endDate: workDate,
-      }));
+    let recommendations = allocatedCrewIds.map((c) => ({
+      activityId: jobInfo.activityId,
+      companyId: allocatedCompanyId,
+      crewId: c,
+      startDate: null,
+      endDate: null,
+    }));
 
+    for (let workDate of jobInfo.activityDays) {
       for (let crewId of allocatedCrewIds) {
-        if (reqCapacity > 0) {
-          let crewCapacity = crews.get(crewId).capacity;
-          reqCapacity -= crewCapacity.get(workDate);
+        let crewCapacity = crews.get(crewId).capacity;
+        const crewDailyCapacity = crewCapacity.get(workDate);
+        if (crewDailyCapacity > 0 && reqCapacity > 0) {
+          reqCapacity -= crewDailyCapacity;
 
           capacities.set(
             workDate,
-            capacities.get(workDate) - crewCapacity.get(workDate)
+            capacities.get(workDate) - crewDailyCapacity
           );
 
           crewCapacity.set(workDate, 0);
@@ -301,15 +301,14 @@ export default class Recommender {
           });
 
           recommendations = recommendations.map((r) =>
-            r.crewId === crewId
+            r.crewId === crewId && r.companyId === allocatedCompanyId
               ? {
                   ...r,
+                  startDate: r.startDate ? r.startDate : workDate,
                   endDate: workDate,
                 }
               : r
-          );
-        } else {
-          break;
+          ); //
         }
       }
 
@@ -323,7 +322,7 @@ export default class Recommender {
       allocated: jobInfo.totalCapacity,
     });
 
-    return recommendations;
+    return recommendations.filter((r) => Boolean(r.startDate && r.endDate));
   }
 
   #getCompaniesRecommendations(allocatedCompanyId, jobInfo) {
@@ -332,26 +331,29 @@ export default class Recommender {
       activityId: jobInfo.activityId,
       companyId: allocatedCompanyId,
       crewId: allocatedCompanyId,
-      startDate: jobInfo.activityDays[0],
     };
 
     let reqCapacity = jobInfo.totalCapacity;
     for (let workDate of jobInfo.activityDays) {
-      recommendation = {
-        ...recommendation,
-        endDate: workDate,
-      };
-
       const companyDailyCapacity = capacities.get(workDate);
+      if (companyDailyCapacity > 0 && reqCapacity > 0) {
+        recommendation = {
+          ...recommendation,
+          startDate: recommendation.startDate
+            ? recommendation.startDate
+            : workDate,
+          endDate: workDate,
+        };
 
-      const takeCapacity =
-        companyDailyCapacity >= jobInfo.activityCapacity
-          ? jobInfo.activityCapacity
-          : companyDailyCapacity;
+        const takeCapacity =
+          companyDailyCapacity >= jobInfo.activityCapacity
+            ? jobInfo.activityCapacity
+            : companyDailyCapacity;
 
-      reqCapacity -= takeCapacity;
+        reqCapacity -= takeCapacity;
 
-      capacities.set(workDate, companyDailyCapacity - takeCapacity);
+        capacities.set(workDate, companyDailyCapacity - takeCapacity);
+      }
 
       if (reqCapacity <= 0) break;
     }
@@ -501,8 +503,6 @@ export default class Recommender {
       ...importantPriority.sort((a, b) => compareDates(a, b)),
       ...normalPriority.sort((a, b) => compareDates(a, b)),
     ];
-    // console.log(JSON.stringify([...this.#activities.entries()], null, 4));
-    // console.log(JSON.stringify(this.#orderedActivities, null, 4));
   }
 
   feeCrewsCapacities(capacityInfo) {
@@ -689,7 +689,25 @@ export default class Recommender {
       }
     }
 
-    return result;
+    const stats = {
+      providedCapacity: this.#providedCapacity,
+      allocatedCapacity: 0,
+      companyAllocations: [],
+    };
+
+    for (let [id, company] of this.#companies.entries()) {
+      stats.allocatedCapacity += company.allocated;
+      stats.companyAllocations.push({
+        companyId: id,
+        allocated: company.allocated,
+        requestedPercentage: company.activitiesPercentage,
+        providedPercentage: Math.floor(
+          (company.allocated * 100) / this.#providedCapacity
+        ),
+      });
+    }
+
+    return {result, stats};
   }
 
   // logCompanyCrews(companyId) {

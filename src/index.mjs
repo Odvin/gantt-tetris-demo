@@ -6,6 +6,8 @@ import Mustache from 'mustache';
 import plan from './mock/mockProgramPlan.json' assert {type: 'json'};
 import capacity from './mock/mockCapacityInfo.json' assert {type: 'json'};
 
+import Recommender from '../src/recommender/Recommender.mjs';
+
 const template = `
   <!DOCTYPE html>
   <html lang="en">
@@ -31,6 +33,19 @@ const template = `
     </body>
   </html>`;
 
+const resultTemplate = `
+<!DOCTYPE html>
+<html lang="en">
+{{>head}}
+  <body>
+    {{>summary}}
+    <pre class="mermaid">
+      {{>allocated}}
+    </pre>
+    {{>scripts}}
+  </body>
+</html>`;
+
 const planActivities = [];
 const siteSet = new Set();
 const siteMap = new Map();
@@ -41,6 +56,7 @@ for (let a of plan.activities) {
       start: a.activityStartDate,
       end: a.activityEndDate,
       id: a.activityId.split('-')[0],
+      activityId: a.activityId,
       c: a.capacity,
       p: a.priority,
     });
@@ -50,6 +66,7 @@ for (let a of plan.activities) {
         start: a.activityStartDate,
         end: a.activityEndDate,
         id: a.activityId.split('-')[0],
+        activityId: a.activityId,
         c: a.capacity,
         p: a.priority,
       },
@@ -64,6 +81,8 @@ for (let siteKey of siteMap.keys()) {
     activities: siteMap.get(siteKey),
   });
 }
+
+// console.log(JSON.stringify(planActivities, null, 4));
 
 const {companies, allocations} = capacity;
 
@@ -221,6 +240,59 @@ const data = {
   compsCap: compsCap.slice(0, 10),
 };
 
+// +++++++ call recommender +++++++++
+const recommender = new Recommender({
+  excludeWeekends: false,
+  excludedWorkDates: ['2024-01-03'],
+  considerScopes: true,
+  considerCertifications: true,
+  considerSkills: true,
+  crewRecommended: true,
+  permissibleCapacityDiscrepancy: 1,
+});
+
+recommender.feedProgramPlan(plan);
+recommender.feeCrewsCapacities(capacity);
+
+const {result, stats} = recommender.recommendation;
+
+// +++++++ call recommender +++++++++
+
+const resultPlanActivities = [];
+
+for (let planed of planActivities) {
+  const allocatedJobs = [];
+  for (let activity of planed.activities) {
+    allocatedJobs.push(activity);
+    let allocatedRes = result.filter(
+      (r) => r.activityId === activity.activityId
+    );
+
+    if (allocatedRes.length) {
+      allocatedRes = allocatedRes.map((a) => ({
+        start: a.startDate,
+        end: a.endDate,
+        id: a.activityId.split('-')[0],
+        c: a.crewId.split('-')[0],
+        p: a.companyId.split('-')[0],
+        mark: a.crewId === a.companyId ? 'active,' : 'done,',
+      }));
+    }
+
+    allocatedJobs.push(...allocatedRes);
+  }
+
+  resultPlanActivities.push({
+    site: planed.site,
+    allocatedJobs,
+  });
+}
+
+const resultData = {
+  stats,
+  resultPlanActivities,
+};
+
 function loadSharedPartials() {
   const partials = {};
   const files = fs.readdirSync('./src/templates');
@@ -239,8 +311,14 @@ function loadSharedPartials() {
 
 try {
   const output = Mustache.render(template, data, loadSharedPartials());
+  const result = Mustache.render(
+    resultTemplate,
+    resultData,
+    loadSharedPartials()
+  );
 
   fs.writeFileSync('./src/index.html', output);
+  fs.writeFileSync('./src/result.html', result);
 } catch (error) {
   console.error(error);
   throw error;

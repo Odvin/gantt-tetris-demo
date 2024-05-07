@@ -1,0 +1,9 @@
+gantt
+  title Program activities
+  dateFormat YYYY-MM-DD
+  {{#resultPlanActivities}}
+  section {{site}}
+    {{#allocatedJobs}}
+    {{id}} P{{p}} C{{c}}       :{{mark}} {{id}}, {{start}}, {{end}}
+    {{/allocatedJobs}}
+  {{/resultPlanActivities}}
