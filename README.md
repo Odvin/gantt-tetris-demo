@@ -4,5 +4,23 @@ Supplier capacity allocation according to the project plan
 
 ## Data presentation
 
-- Program Plan preview
-- Recommendation for activities preview
+- Program Plan [./src/index.html]
+- Recommendation for activities [./src/result]
+
+## Set up
+
+```
+npm i
+```
+
+## Create new mock data set
+
+```
+node ./src/mock/Generator.mjs
+```
+
+## Render presentation on the new data set
+
+```
+node ./src/index.mjs
+```
