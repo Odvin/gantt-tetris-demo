@@ -5,8 +5,36 @@ import Mustache from 'mustache';
 
 import plan from './mock/mockProgramPlan.json' assert {type: 'json'};
 import capacity from './mock/mockCapacityInfo.json' assert {type: 'json'};
+import config from './config.json' assert {type: 'json'};
 
 import Recommender from '../src/recommender/Recommender.mjs';
+
+function getWorkDates(start, end, config) {
+  let dates = [];
+  const startDate = new Date(start);
+  const endDate = new Date(end);
+
+  if (startDate > endDate) {
+    throw Error('Incorrect days range');
+  }
+
+  let currentDate = startDate;
+
+  while (currentDate <= endDate) {
+    dates.push(currentDate.toISOString().split('T')[0]);
+    currentDate.setUTCDate(currentDate.getUTCDate() + 1);
+  }
+
+  if (config.excludeWeekends) {
+    dates = dates.filter((d) => 0 < new Date(d).getUTCDate() < 6);
+  }
+
+  if (config.excludedWorkDates) {
+    dates = dates.filter((d) => !config.excludedWorkDates.includes(d));
+  }
+
+  return dates.length;
+}
 
 const template = `
   <!DOCTYPE html>
@@ -38,10 +66,12 @@ const resultTemplate = `
 <html lang="en">
 {{>head}}
   <body>
+    {{>program}}
     {{>summary}}
     <pre class="mermaid">
       {{>allocated}}
     </pre>
+    {{>result}}
     {{>scripts}}
   </body>
 </html>`;
@@ -132,13 +162,19 @@ const programCap = sites.map((s) => {
 
       for (let a of activities) {
         if (p.projectId === a.projectId) {
-          siteCapacity += a.capacity;
-          projectCapacity += a.capacity;
+          const workDates = getWorkDates(
+            a.activityStartDate,
+            a.activityEndDate,
+            config
+          );
+
+          siteCapacity += a.capacity * workDates;
+          projectCapacity += a.capacity * workDates;
           siteActivities += 1;
           projectActivities += 1;
 
           programTotalActivities += 1;
-          programTotalCapacities += a.capacity;
+          programTotalCapacities += a.capacity * workDates;
         }
       }
       projectCap.push({
@@ -241,18 +277,10 @@ const data = {
 };
 
 // +++++++ call recommender +++++++++
-const recommender = new Recommender({
-  excludeWeekends: false,
-  excludedWorkDates: ['2024-01-03'],
-  considerScopes: true,
-  considerCertifications: true,
-  considerSkills: true,
-  crewRecommended: true,
-  permissibleCapacityDiscrepancy: 1,
-});
+const recommender = new Recommender(config);
 
 recommender.feedProgramPlan(plan);
-recommender.feeCrewsCapacities(capacity);
+recommender.feedCrewsCapacities(capacity);
 
 const {result, stats} = recommender.recommendation;
 
@@ -288,9 +316,66 @@ for (let planed of planActivities) {
   });
 }
 
+const resultView = [];
+for (let site of sites) {
+  let projectsOnSite = [];
+  for (let project of projects) {
+    if (project.siteId === site.siteId) {
+      let location = {};
+      if (site.latitude && site.longitude) {
+        location = {
+          lat: site.latitude,
+          long: site.longitude,
+        };
+      }
+
+      projectsOnSite.push({
+        siteTitle: site.siteTitle,
+        ...project,
+        ...location,
+      });
+    }
+  }
+
+  for (let projectOnSite of projectsOnSite) {
+    const projectActivities = activities
+      .filter(
+        (a) =>
+          a.projectId == projectOnSite.projectId &&
+          a.siteId === projectOnSite.siteId
+      )
+      .map((a) => ({
+        ...a,
+        totalCapacity:
+          a.capacity *
+          getWorkDates(a.activityStartDate, a.activityEndDate, config),
+      }))
+      .map((a) => {
+        const recommendations = result.filter(
+          (r) =>
+            r.siteId === a.siteId &&
+            r.projectId === a.projectId &&
+            r.activityId === a.activityId
+        );
+
+        return {
+          ...a,
+          recommendations,
+        };
+      });
+
+    resultView.push({
+      ...projectOnSite,
+      projectActivities,
+    });
+  }
+}
+
 const resultData = {
+  plan,
   stats,
   resultPlanActivities,
+  resultView,
 };
 
 function loadSharedPartials() {

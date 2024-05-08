@@ -1,0 +1,55 @@
+<div class="container">
+<h5>Result</h5>
+<table class="table table-striped">
+  <thead>
+    <tr>
+      <th scope="col">Site ID, Title</th>
+      <th scope="col">Location</th>
+      <th scope="col">Project ID, Title</th>
+      <th scope="col">Start</th>
+      <th scope="col">End</th>
+    </tr>
+  </thead>
+  <tbody>
+  {{#resultView}}
+    <tr>
+      <td>{{siteId}} <br/> {{siteTitle}}</td>
+      <td>lat: {{lat}}</br>log: {{long}}</td>
+      <td>{{projectId}} <br/> {{projectTitle}}</td>
+      <td>{{projectStarDate}}</td>
+      <td>{{projectEndDate}}</td>
+    <tr>
+      <td colspan="5">
+      <table class="table mb-0">
+        <thead>
+          <tr>
+            <th scope="col">Activity ID (S-E)</th>
+            <th scope="col">Cap.</th>
+            <th scope="col">Req.</th>
+            <th scope="col">Company : Crew : Start : End </th>
+            </tr>
+          </thead>
+          <tbody>
+          {{#projectActivities}}
+            <tr>
+            <td>{{activityId}} <br> <b>{{activityStartDate}} - {{activityEndDate}}</b></td>
+            <td><b>T: {{totalCapacity}}</b> D: {{capacity}}</td>
+            <td><b>{{scope}}</b> <br/> <b>C:</b> {{certifications}}<br><b>S:</b> {{skills}}</td>
+            <td>
+              {{#recommendations}}
+              <b>C:</b> {{companyId}} <br/> <b>Cr:</b> {{crewId}} <b>{{startDate}} - {{endDate}}</b> <br/> <hr/>
+              {{/recommendations}}
+            </td>
+            <tr/>
+          {{/projectActivities}}
+          </tbody>
+        </table>
+      </td>
+    </tr>
+    {{/resultView}}
+  </tbody>
+</table>
+</div>
+
+
+

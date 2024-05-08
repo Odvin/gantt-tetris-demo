@@ -12,13 +12,10 @@ const recommender = new Recommender({
 });
 
 recommender.feedProgramPlan(plan);
-recommender.feeCrewsCapacities(capacityInfo);
+recommender.feedCrewsCapacities(capacityInfo);
 
 const r = recommender.recommendation;
 
-// console.log(JSON.stringify(r, null, 4));
-// console.log(r);
-
-// recommender.logCompanyCapacities('1e5b5fdc-c98a-42a4-9ed2-de9ab8eae754');
+console.log(JSON.stringify(r, null, 4));
 
 // console.log(recommender.config);

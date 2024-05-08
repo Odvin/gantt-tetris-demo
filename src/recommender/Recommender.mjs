@@ -315,11 +315,14 @@ export default class Recommender {
       if (reqCapacity <= 0) break;
     }
 
+    const updateAllocated =
+      this.#companies.get(allocatedCompanyId).allocated + jobInfo.totalCapacity;
+
     this.#companies.set(allocatedCompanyId, {
       ...this.#companies.get(allocatedCompanyId),
       crews: crews,
       capacities: capacities,
-      allocated: jobInfo.totalCapacity,
+      allocated: updateAllocated,
     });
 
     return recommendations.filter((r) => Boolean(r.startDate && r.endDate));
@@ -358,10 +361,13 @@ export default class Recommender {
       if (reqCapacity <= 0) break;
     }
 
+    const updateAllocated =
+      this.#companies.get(allocatedCompanyId).allocated + jobInfo.totalCapacity;
+
     this.#companies.set(allocatedCompanyId, {
       ...this.#companies.get(allocatedCompanyId),
       capacities: capacities,
-      allocated: jobInfo.totalCapacity,
+      allocated: updateAllocated,
     });
 
     return recommendation;
@@ -505,7 +511,7 @@ export default class Recommender {
     ];
   }
 
-  feeCrewsCapacities(capacityInfo) {
+  feedCrewsCapacities(capacityInfo) {
     this.#capacityInfoId = capacityInfo.capacityInfoId
       ? capacityInfo.capacityInfoId
       : null;
@@ -709,14 +715,4 @@ export default class Recommender {
 
     return {result, stats};
   }
-
-  // logCompanyCrews(companyId) {
-  //   const company = this.#companies.get(companyId);
-  //   console.log(JSON.stringify([...company.crews.entries()], null, 4));
-  // }
-
-  // logCompanyCapacities(companyId) {
-  //   const company = this.#companies.get(companyId);
-  //   console.log(JSON.stringify([...company.capacities.entries()], null, 4));
-  // }
 }
