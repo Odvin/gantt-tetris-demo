@@ -24,3 +24,17 @@ node ./src/mock/Generator.mjs
 ```
 node ./src/index.mjs
 ```
+
+## Create Excels files
+
+Using `mockProgramPlan.json`
+
+```
+node ./src/programExcel.mjs
+```
+
+Using `mockCapacityInfo.json`
+
+```
+node ./src/capacityExcel.mjs
+```
